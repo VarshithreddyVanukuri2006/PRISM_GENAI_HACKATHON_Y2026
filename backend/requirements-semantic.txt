@@ -1,0 +1,3 @@
+# Optional dependencies for Phase C semantic retrieval. CPU execution is used.
+sentence-transformers
+faiss-cpu
