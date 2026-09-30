@@ -311,3 +311,13 @@ VITE_API_BASE_URL=http://127.0.0.1:8000
 The development server's Vite origin is allowed by the backend's default CORS configuration. Set `CODELENS_CORS_ORIGINS` to a comma-separated origin list when hosting the frontend elsewhere. To enable graph and multi-pass retrieval, index with `build_graph: true`; for a graph-only/CPU-light demo, semantic indexing can remain disabled. Select an indexed Git ref from the version selector to search it, or choose “All indexed versions.” Use “Trace query” to call evolutionary retrieval when the selected repository has indexed versions. The repository path used by “Index repository” must be accessible to the backend process.
 
 Build the frontend for production with `npm run build` from `frontend/`.
+
+### Deploy the full demo on Vercel
+
+This repository is a monorepo, so create two Vercel projects from the same Git repository:
+
+1. **API project:** use the repository root as the Root Directory. Vercel detects the FastAPI entry point in `main.py` and installs the root `requirements.txt`. The entry point points to the existing backend and its checked-in demo index. Vercel sets this deployment to read-only; repository/version indexing endpoints return `403` there because serverless files are not a durable index store.
+2. **Frontend project:** set the Root Directory to `frontend` so Vercel builds the Vite application from that package.
+3. After both projects have a production domain, set `VITE_API_BASE_URL` on the frontend project to the API project's `https://…vercel.app` URL. Set `CODELENS_CORS_ORIGINS` on the API project to the frontend project's exact `https://…vercel.app` origin, then redeploy both projects.
+
+The deployed API serves search, repository listing, graph relationships, and version/evolution data included in the deployment. Indexing is intended to run locally or on a backend with persistent storage; this public demo does not accept arbitrary filesystem indexing requests.

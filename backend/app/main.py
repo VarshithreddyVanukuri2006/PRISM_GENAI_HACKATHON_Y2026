@@ -18,7 +18,11 @@ def _default_origins() -> list[str]:
     configured = os.environ.get("CODELENS_CORS_ORIGINS")
     if configured:
         return [origin.strip() for origin in configured.split(",") if origin.strip()]
-    return ["http://localhost:5173", "http://127.0.0.1:5173"]
+    origins = ["http://localhost:5173", "http://127.0.0.1:5173"]
+    frontend_url = os.environ.get("CODELENS_FRONTEND_URL")
+    if frontend_url:
+        origins.append(frontend_url.rstrip("/"))
+    return origins
 
 
 def create_app(service: CodeLensService | None = None,
