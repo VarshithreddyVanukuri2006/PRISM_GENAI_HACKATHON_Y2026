@@ -325,4 +325,4 @@ Vercel Authentication is currently enabled for these projects, so visitors need 
 2. **Frontend project (`codelens-agentic-frontend`):** uses `frontend` as the Root Directory so Vercel builds the Vite application from that package.
 3. The frontend's `VITE_API_BASE_URL` points to the API production domain. The API's `CODELENS_CORS_ORIGINS` allows the frontend production origin.
 
-The deployed API serves search, repository listing, graph relationships, and version/evolution data included in the deployment. Indexing is intended to run locally or on a backend with persistent storage; this public demo does not accept arbitrary filesystem indexing requests.
+The deployed API serves search, repository listing, graph relationships, and version/evolution data included in the deployment. Indexing is intended to run locally or on a backend with persistent storage; this deployed demo does not accept arbitrary filesystem indexing requests.
