@@ -314,10 +314,15 @@ Build the frontend for production with `npm run build` from `frontend/`.
 
 ### Deploy the full demo on Vercel
 
-This repository is a monorepo, so create two Vercel projects from the same Git repository:
+The production deployments are available here:
 
-1. **API project:** use the repository root as the Root Directory. Vercel detects the FastAPI entry point in `main.py` and installs the root `requirements.txt`. The entry point points to the existing backend and its checked-in demo index. Vercel sets this deployment to read-only; repository/version indexing endpoints return `403` there because serverless files are not a durable index store.
-2. **Frontend project:** set the Root Directory to `frontend` so Vercel builds the Vite application from that package.
-3. After both projects have a production domain, set `VITE_API_BASE_URL` on the frontend project to the API project's `https://…vercel.app` URL. Set `CODELENS_CORS_ORIGINS` on the API project to the frontend project's exact `https://…vercel.app` origin, then redeploy both projects.
+- **Frontend:** [Open CodeLens](https://codelens-agentic-frontend.vercel.app)
+- **FastAPI:** [API health](https://codelens-agentic-api.vercel.app/api/health) · [API docs](https://codelens-agentic-api.vercel.app/docs)
+
+Vercel Authentication is currently enabled for these projects, so visitors need deployment access to open the links. This repository is a monorepo with two Vercel projects:
+
+1. **API project (`codelens-agentic-api`):** uses the repository root. Vercel detects the FastAPI entry point in `main.py` and installs the root `requirements.txt`. The entry point points to the existing backend and its checked-in demo index. Vercel sets this deployment to read-only; repository/version indexing endpoints return `403` there because serverless files are not a durable index store.
+2. **Frontend project (`codelens-agentic-frontend`):** uses `frontend` as the Root Directory so Vercel builds the Vite application from that package.
+3. The frontend's `VITE_API_BASE_URL` points to the API production domain. The API's `CODELENS_CORS_ORIGINS` allows the frontend production origin.
 
 The deployed API serves search, repository listing, graph relationships, and version/evolution data included in the deployment. Indexing is intended to run locally or on a backend with persistent storage; this public demo does not accept arbitrary filesystem indexing requests.
