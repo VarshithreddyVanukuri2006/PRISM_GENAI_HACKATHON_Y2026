@@ -319,9 +319,9 @@ The production deployments are available here:
 - **Frontend:** [Open CodeLens](https://codelens-agentic-frontend.vercel.app)
 - **FastAPI:** [API health](https://codelens-agentic-api.vercel.app/api/health) · [API docs](https://codelens-agentic-api.vercel.app/docs)
 
-Vercel Authentication is currently enabled for these projects, so visitors need deployment access to open the links. This repository is a monorepo with two Vercel projects:
+The production aliases above are publicly reachable. Vercel Authentication remains configured for generated deployment URLs. This repository is a monorepo with two Vercel projects:
 
-1. **API project (`codelens-agentic-api`):** uses the repository root. Vercel detects the FastAPI entry point in `main.py` and installs the root `requirements.txt`. The entry point points to the existing backend and its checked-in demo index. Vercel sets this deployment to read-only; repository/version indexing endpoints return `403` there because serverless files are not a durable index store.
+1. **API project (`codelens-agentic-api`):** uses the repository root and the FastAPI framework preset declared in `vercel.json`. Vercel loads the FastAPI entry point from `main.py` and installs the root `requirements.txt`. The entry point points to the existing backend and its checked-in demo index. Vercel sets this deployment to read-only; repository/version indexing endpoints return `403` there because serverless files are not a durable index store.
 2. **Frontend project (`codelens-agentic-frontend`):** uses `frontend` as the Root Directory so Vercel builds the Vite application from that package.
 3. The frontend's `VITE_API_BASE_URL` points to the API production domain. The API's `CODELENS_CORS_ORIGINS` allows the frontend production origin.
 

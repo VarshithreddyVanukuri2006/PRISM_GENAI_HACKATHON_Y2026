@@ -88,6 +88,7 @@ function App() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [apiError, setApiError] = useState("");
+  const [retryKind, setRetryKind] = useState<"connection" | "search" | "evolution" | "index" | null>(null);
   const [repoPath, setRepoPath] = useState("");
   const [indexing, setIndexing] = useState(false);
   const [evolutionBusy, setEvolutionBusy] = useState(false);
@@ -98,7 +99,7 @@ function App() {
       const [status, data] = await Promise.all([api<{ status: string }>("/api/health"), api<{ repositories: Repo[] }>("/api/repositories")]);
       setHealth(status.status === "ok"); setRepos(data.repositories); setApiError("");
       setRepoId((current) => current && data.repositories.some((r) => r.repository_id === current) ? current : data.repositories[0]?.repository_id || "");
-    } catch (reason) { setHealth(false); setApiError(reason instanceof Error ? reason.message : "API unavailable"); }
+    } catch (reason) { setHealth(false); setApiError(reason instanceof Error ? reason.message : "API unavailable"); setRetryKind("connection"); }
   }, []);
   useEffect(() => { void reload(); const timer = window.setInterval(() => void reload(), 15000); return () => clearInterval(timer); }, [reload]);
 
@@ -111,11 +112,11 @@ function App() {
 
   const search = useCallback(async (q = query) => {
     if (!q.trim()) { setError("Enter a question to search the indexed repository."); return; }
-    setBusy(true); setError(""); setResponse(null); setSelected(null); setGraphFocus(null); setGraph(null); setEvolution(null);
+    setBusy(true); setError(""); setRetryKind(null); setResponse(null); setSelected(null); setGraphFocus(null); setGraph(null); setEvolution(null);
     try {
       const data = await api<SearchResponse>("/api/search", { method: "POST", body: JSON.stringify({ query: q, repository: repoId || undefined, version: version || undefined, top_k: 10, retrieval_method: "auto" }) });
-      setResponse(data); setSelected(data.results[0] || null);
-    } catch (reason) { setError(reason instanceof Error ? reason.message : "Search failed."); }
+      setResponse(data); setSelected(data.results[0] || null); setRetryKind(null);
+    } catch (reason) { setError(reason instanceof Error ? reason.message : "Search failed."); setRetryKind("search"); }
     finally { setBusy(false); }
   }, [query, repoId, version]);
   useEffect(() => { if (repoId) void search(query); }, [repoId, version]); // Keep results scoped to the selected repository/version.
@@ -130,18 +131,27 @@ function App() {
 
   const runEvolution = useCallback(async () => {
     if (!repository?.has_versions) return;
-    setEvolutionBusy(true); setError("");
-    try { setEvolution(await api<Evolution>("/api/evolution", { method: "POST", body: JSON.stringify({ query, repository: repoId, retrieval_mode: "auto", per_version_top_k: 5 }) })); }
-    catch (reason) { setError(reason instanceof Error ? reason.message : "Evolution search failed."); }
+    setEvolutionBusy(true); setError(""); setRetryKind(null);
+    try { setEvolution(await api<Evolution>("/api/evolution", { method: "POST", body: JSON.stringify({ query, repository: repoId, retrieval_mode: "auto", per_version_top_k: 5 }) })); setRetryKind(null); }
+    catch (reason) { setError(reason instanceof Error ? reason.message : "Evolution search failed."); setRetryKind("evolution"); }
     finally { setEvolutionBusy(false); }
   }, [query, repoId, repository]);
 
   const indexRepository = async () => {
     if (!repoPath.trim()) return;
-    setIndexing(true); setError("");
-    try { await api("/api/repositories/index", { method: "POST", body: JSON.stringify({ repository_path: repoPath.trim(), build_graph: true, include_semantic: false }) }); await reload(); setRepoPath(""); }
-    catch (reason) { setError(reason instanceof Error ? reason.message : "Indexing failed."); }
+    setIndexing(true); setError(""); setRetryKind(null);
+    try { await api("/api/repositories/index", { method: "POST", body: JSON.stringify({ repository_path: repoPath.trim(), build_graph: true, include_semantic: false }) }); await reload(); setRepoPath(""); setRetryKind(null); }
+    catch (reason) { setError(reason instanceof Error ? reason.message : "Indexing failed."); setRetryKind("index"); }
     finally { setIndexing(false); }
+  };
+
+  const retry = () => {
+    const action = retryKind;
+    setError(""); setApiError(""); setRetryKind(null);
+    if (action === "search") void search();
+    else if (action === "evolution") void runEvolution();
+    else if (action === "index") void indexRepository();
+    else void reload();
   };
 
   const analyzedQuery = response?.query || query;
@@ -167,7 +177,7 @@ function App() {
       <div className="content">
         <div className="intro"><div><div className="eyebrow">RETRIEVAL WORKSPACE</div><h1>Search your codebase</h1><p>Ask about behavior. Trace the implementation to its source.</p></div><label className="version-control"><span>VERSION SCOPE</span><select value={version} onChange={(event) => { setVersion(event.target.value); setResponse(null); setSelected(null); setGraph(null); }} disabled={!repoId}><option value="">Working tree index</option>{versions.length > 0 && <option value="all">All indexed versions</option>}{versions.map((item) => <option value={item.label} key={item.version_id}>{item.label} · {item.commit_hash.slice(0, 8)}</option>)}</select></label></div>
         <section className="search-panel" id="search"><label htmlFor="query">NATURAL LANGUAGE QUERY</label><div className="search-row"><textarea id="query" rows={2} value={query} placeholder="Describe the code behavior you want to find…" onChange={(event) => { setQuery(event.target.value); setEvolution(null); }} onKeyDown={(event) => { if ((event.metaKey || event.ctrlKey) && event.key === "Enter") void search(); }} /><Button className="primary" onClick={() => void search()} disabled={busy || !health}>{busy ? "Searching…" : "⌕  Search code"}</Button></div><div className="demo-row"><span>EXAMPLES</span>{demos.map((item) => <button key={item} onClick={() => { setQuery(item); void search(item); }}>{item}</button>)}</div></section>
-        {(apiError || error) && <div className="error-banner">{apiError ? `Cannot reach CodeLens API: ${apiError}` : error}<button onClick={() => void reload()}>Retry</button></div>}
+        {(apiError || error) && <div className="error-banner">{apiError ? `Cannot reach CodeLens API: ${apiError}` : error}<button onClick={retry}>Retry</button></div>}
         <div className="metric-grid">
           <Metric label="RETRIEVAL LATENCY" value={response ? `${response.retrieval_latency_ms.toFixed(1)} ms` : "—"} detail={response?.retrieval_method || "Waiting for search"} />
           <Metric label="INDEXED SNIPPETS" value={repository?.number_of_chunks.toLocaleString() || "—"} detail={repository?.name || "No repository"} />
