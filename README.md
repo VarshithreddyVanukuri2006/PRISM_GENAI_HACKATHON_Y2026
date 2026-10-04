@@ -326,3 +326,5 @@ The production aliases above are publicly reachable. Vercel Authentication remai
 3. The frontend's `VITE_API_BASE_URL` points to the API production domain. The API's `CODELENS_CORS_ORIGINS` allows the frontend production origin.
 
 The deployed API serves search, repository listing, graph relationships, and version/evolution data included in the deployment. Indexing is intended to run locally or on a backend with persistent storage; this deployed demo does not accept arbitrary filesystem indexing requests.
+the vedio link for the project :
+https://drive.google.com/file/d/1N_U0Hd07VDyQa_qGRH8dhq49QRvdtPd7/view?usp=drivesdk
