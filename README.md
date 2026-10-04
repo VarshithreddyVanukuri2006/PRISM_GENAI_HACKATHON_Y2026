@@ -328,3 +328,5 @@ The production aliases above are publicly reachable. Vercel Authentication remai
 The deployed API serves search, repository listing, graph relationships, and version/evolution data included in the deployment. Indexing is intended to run locally or on a backend with persistent storage; this deployed demo does not accept arbitrary filesystem indexing requests.
 the vedio link for the project :
 https://drive.google.com/file/d/1N_U0Hd07VDyQa_qGRH8dhq49QRvdtPd7/view?usp=drivesdk
+ppt link:
+https://docs.google.com/presentation/d/18KTx47Ms7JmK2-pYIATj3-BUKtc9-a2H/edit?usp=drive_link&ouid=115090214381064640957&rtpof=true&sd=true
